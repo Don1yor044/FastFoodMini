@@ -8,52 +8,21 @@ import {
   Typography,
   message,
 } from "antd";
+import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { useRegisterMutation } from "@src/store/auth";
-import { useState } from "react";
-import { useDispatch } from "react-redux";
-import { setCredentials } from "@src/store/authSlice";
-import { useGetUsernameExistQuery } from "@src/store/user";
 import { css } from "@emotion/react";
 
 export const RegisterPage = () => {
   const [form] = Form.useForm();
   const navigate = useNavigate();
-  const [register] = useRegisterMutation();
-  const dispatch = useDispatch();
-  const [userdata, setUsername] = useState("");
-  const { data: userExist } = useGetUsernameExistQuery(userdata);
   const onFinish = async () => {
     const data = form.getFieldsValue();
-    setUsername(data.username);
 
     try {
-      const res = await register(data);
+      await axios.post("https://80a4e112872cbb1a.mokky.dev/register", data);
 
-      if (userExist) {
-        message.error("Bunday username mavjud !");
-        return;
-      }
-
-      if (res && res.data) {
-        if (res.data.accessToken) {
-          localStorage.setItem("token", res.data.accessToken);
-          localStorage.setItem("userId", JSON.stringify(res.data.userId));
-          localStorage.setItem("username", data.username);
-          navigate("/");
-          dispatch(
-            setCredentials({
-              userId: res.data.userId,
-              token: res.data.accessToken,
-              username: data.username,
-            })
-          );
-        } else {
-          message.error("Access token not found in response.");
-        }
-      } else {
-        message.error("Registration failed. Please try again.");
-      }
+      message.success("Registration successful!");
+      navigate("/login");
     } catch (error) {
       console.error("Registration error:", error);
       message.error("An error occurred during registration. Please try again.");

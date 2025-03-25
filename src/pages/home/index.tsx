@@ -2,36 +2,58 @@ import { Col, Result, Row, Segmented, Skeleton } from "antd";
 import { useEffect, useState } from "react";
 import styled from "@emotion/styled";
 import Footer from "./HomeComponents/footer";
-import { ProductsModal } from "./HomeComponents/ordersModal";
-import {
-  useGetProductsByCategoryQuery,
-  useGetProductsQuery,
-} from "../../store/products";
-import { useGetCategoriesQuery } from "../../store/categories";
 import { Basket } from "./HomeComponents/basket";
-import { IProduct } from "../interface";
-import { Product } from "./HomeComponents/product";
 import { DeliveryModal } from "./HomeComponents/deliveryModal";
-import { ThreeDot } from "react-loading-indicators";
 import Headers from "./HomeComponents/headers";
+import axios from "axios";
+import { Product } from "./HomeComponents/product";
+import { ICategory, IProduct } from "../interface";
+import { ThreeDot } from "react-loading-indicators";
+import { ProductsModal } from "./HomeComponents/ordersModal";
 
 export const HomePage = () => {
-  const [category, setCategory] = useState<string>();
-  const { data: products, isLoading: ProductLoading } = category
-    ? useGetProductsByCategoryQuery(category)
-    : useGetProductsQuery(undefined);
-
-  const { data: categories, isLoading: CategoryLoading } =
-    useGetCategoriesQuery(undefined);
+  const [category, setCategory] = useState([]);
+  const [categoryLoading, setCategoryLoading] = useState(false);
+  const [products, setProducts] = useState([]);
+  const [productsLoading, setProductsLoading] = useState(false);
+  const [categoryId, setCategoryId] = useState(1);
+  const fetchCategories = async () => {
+    setCategoryLoading(true);
+    try {
+      const res = await axios.get(
+        `https://80a4e112872cbb1a.mokky.dev/categories`
+      );
+      setCategory(res.data);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setCategoryLoading(false);
+    }
+  };
+  const fetchProducts = async () => {
+    setProductsLoading(true);
+    try {
+      const res = await axios.get(
+        `https://80a4e112872cbb1a.mokky.dev/products?categoryId=${categoryId}`
+      );
+      setProducts(res.data);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setProductsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    if (categories && categories.length > 0) {
-      setCategory(categories[0].title);
-    }
-  }, [categories]);
+    fetchProducts();
+  }, [categoryId]);
 
-  const handleChange = (value: string) => {
-    setCategory(value);
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  const handleChange = (value: number) => {
+    setCategoryId(value);
   };
   return (
     <>
@@ -40,51 +62,50 @@ export const HomePage = () => {
         <div>
           <SegmentedStyled>
             <div className="min-w-full">
-              {CategoryLoading ? (
-                <div
-                  className="flex gap-8"
-                  style={{
-                    marginTop: 20,
-                    padding: "0px 80px",
-                  }}
-                >
-                  {Array.from({ length: 9 }).map((_, index) => (
+              <div
+                className="flex gap-8"
+                style={{
+                  marginTop: 20,
+                }}
+              >
+                {!categoryLoading ? (
+                  <Segmented
+                    options={category.map((cat: ICategory) => ({
+                      label: (
+                        <div className="flex px-4 gap-2 !items-center">
+                          <img
+                            src={cat.icon}
+                            alt=""
+                            className="object-cover w-7 h-7"
+                          />
+                          <div>{cat.title}</div>
+                        </div>
+                      ),
+                      value: cat.id,
+                      className:
+                        "block min-w-[120px] bg-white hover:!bg-white !rounded-2xl",
+                    }))}
+                    style={{
+                      padding: "0px 80px",
+                      marginTop: 20,
+                    }}
+                    onChange={handleChange}
+                  />
+                ) : (
+                  Array.from({ length: 9 }).map((_, index) => (
                     <Skeleton.Button
                       key={index}
                       active
                       size="large"
                       style={{ width: 120, height: 38, borderRadius: 30 }}
                     />
-                  ))}
-                </div>
-              ) : (
-                <Segmented
-                  options={categories?.map((category: any) => ({
-                    label: (
-                      <div className="flex px-4 gap-2 !items-center">
-                        <img
-                          src={category.icon}
-                          alt=""
-                          className="object-cover w-7 h-7"
-                        />
-                        <div>{category.title}</div>
-                      </div>
-                    ),
-                    value: category.title,
-                    className:
-                      "block min-w-[120px] bg-white hover:!bg-white !rounded-2xl",
-                  }))}
-                  style={{
-                    padding: "0px 80px",
-                    marginTop: 20,
-                  }}
-                  value={category}
-                  onChange={handleChange}
-                />
-              )}
+                  ))
+                )}
+              </div>
             </div>
           </SegmentedStyled>
         </div>
+
         <div className="my-10 mx-auto px-2 lg:px-5 ">
           {/* Korzinka s */}
           <Row
@@ -96,9 +117,9 @@ export const HomePage = () => {
               <Basket />
             </Col>
 
-            {/* Buyurmatlar  */}
+            {/* Product  */}
             <Col xl={18}>
-              {ProductLoading ? (
+              {productsLoading ? (
                 <div className="ps-20">
                   <ThreeDot
                     variant="bob"
@@ -118,7 +139,7 @@ export const HomePage = () => {
                     ) : (
                       <Col span={20} className="h-96">
                         <Result
-                          title="Sorry, there are no products in this category"
+                          title="Извините, в этой категории нет товаров"
                           className="p-20"
                         />
                       </Col>
@@ -141,12 +162,15 @@ export const HomePage = () => {
 };
 
 const SegmentedStyled = styled.div`
+  .ant-segmented-thumb {
+    border-radius: 50px !important;
+  }
   overflow-x: auto;
   &::-webkit-scrollbar {
-    display: none; /* Chrome, Safari va Opera uchun */
+    display: none;
   }
-  -ms-overflow-style: none; /* IE va Edge uchun */
-  scrollbar-width: none; /* Firefox uchun */
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 
   .ant-segmented-item {
     border-radius: 20px;

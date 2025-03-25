@@ -14,9 +14,9 @@ export const Product = ({ item, index }: { item: IProduct; index: number }) => {
       xs={12}
       sm={12}
       md={8}
-      lg={6}
+      lg={8}
       xl={8}
-      xxl={24}
+      xxl={12}
       className="px-3 py-3"
     >
       <div
@@ -40,7 +40,7 @@ export const Product = ({ item, index }: { item: IProduct; index: number }) => {
           />
 
           <Title level={3} className="mt-2 !mb-2">
-            {priceFormatter2(item.price)} sum
+            {priceFormatter2(item.price)} ₽
           </Title>
           <Typography.Title
             level={5}
@@ -50,7 +50,7 @@ export const Product = ({ item, index }: { item: IProduct; index: number }) => {
               overflow: "auto",
               overflowY: "hidden",
               whiteSpace: "nowrap",
-              scrollbarWidth: "none", // For Firefox
+              scrollbarWidth: "none",
               msOverflowStyle: "none",
             }}
           >
@@ -66,7 +66,7 @@ export const Product = ({ item, index }: { item: IProduct; index: number }) => {
               navigate(
                 "?" +
                   queryString.stringify({
-                    add: true,
+                    modal: true,
                     id: item.id,
                   })
               );

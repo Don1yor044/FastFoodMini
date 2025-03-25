@@ -2,26 +2,47 @@ import Title from "antd/es/typography/Title";
 import { Button, Divider, Typography, Col } from "antd";
 import queryString from "query-string";
 import { useNavigate } from "react-router-dom";
-import { useGetOrdersQuery } from "@src/store/orders";
-import { useSelector } from "react-redux";
-import { RootState } from "@src/store";
 import { IProduct } from "@src/pages/interface";
 import { BasketProduct } from "./korzinkaProduct";
 import { priceFormatter2 } from "../../Additions/PriceFormat";
+import { useEffect, useState } from "react";
+import axios from "axios";
 
 export const Basket = () => {
-  const userId =
-    useSelector((state: RootState) => state.auth.userId) ||
-    (localStorage.getItem("userId")
-      ? JSON.parse(localStorage.getItem("userId") || "null")
-      : null) ||
-    null;
-
-  const { data: basket, isLoading: basketLoading } = useGetOrdersQuery(
-    userId as string
-  );
-
   const navigate = useNavigate();
+  const [basket, setBasket] = useState<{
+    products: { productId: number; quantity: number }[];
+  }>({ products: [] });
+  const [products, setProducts] = useState<IProduct[]>([]);
+  const [basketLoading, setBasketLoading] = useState<boolean>(true);
+
+  const fetchBasket = async () => {
+    setBasketLoading(true); // Loader faollashtirish
+    try {
+      const res = await axios.get(`https://80a4e112872cbb1a.mokky.dev/basket`);
+      setBasket(res.data);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setBasketLoading(false); // Loader o'chirish
+    }
+  };
+
+  const fetchProducts = async () => {
+    try {
+      const res = await axios.get(
+        `https://80a4e112872cbb1a.mokky.dev/products`
+      );
+      setProducts(res.data);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  useEffect(() => {
+    fetchBasket();
+    fetchProducts();
+  }, []);
 
   if (basketLoading)
     return (
@@ -31,15 +52,32 @@ export const Basket = () => {
             <Title level={4}>Корзина</Title>
             <div
               className="bg-[#F2F2F3] w-10 h-7 flex justify-center items-center"
-              style={{ borderRadius: "10px" }}
+              style={{ borderRadius: "6px" }}
             >
               0
             </div>
           </div>
-          <Title level={5}>Тут пока пусто :(</Title>
+          <Title level={5}>Загрузка...</Title>
         </div>
       </Col>
     );
+
+  const userId = Number(localStorage.getItem("userId")); // localStorage dan userId ni olish
+
+  const userBasket = basket.find((b) => b.userId === userId); // Faqat ushbu userId ga tegishli basketni olish
+
+  const basketItems =
+    userBasket?.products
+      ?.map((item) => {
+        const product = products.find((p) => p.id === item.productId);
+        return product ? { ...product, quantity: item.quantity } : null;
+      })
+      .filter(Boolean) || []; // Agar ma'lumot bo‘lmasa, bo‘sh massiv qaytarish
+
+  const totalPrice = basketItems.reduce(
+    (sum, item) => sum + (item?.price || 0) * (item?.quantity || 0),
+    0
+  );
 
   return (
     <Col lg={24}>
@@ -50,45 +88,45 @@ export const Basket = () => {
             className="bg-[#F2F2F3] w-10 h-7 flex justify-center items-center"
             style={{ borderRadius: "6px" }}
           >
-            {basket?.items?.length || 0}
+            {basketItems.length}
           </div>
         </div>
-        {basket?.items?.length ? (
-          <div>
-            <Divider style={{ marginBlock: "0px" }} />
-            {basket.items.map(
-              (b: { product: IProduct; quantity: number; price: number }) => (
-                <div key={b.product.id} className="flex flex-col gap-2 mt-5">
-                  <BasketProduct product={b.product} quantity={b.quantity} />
+        <>
+          {basketItems.length > 0 ? (
+            <>
+              <Divider style={{ marginBlock: "0px" }} />
+              {basketItems.map((b) => (
+                <div key={b.id} className="flex flex-col gap-2 mt-5">
+                  <BasketProduct product={b} quantity={b.quantity} />
                   <Divider style={{ marginBlock: "5px" }} />
                 </div>
-              )
-            )}
-            <div className="flex justify-between items-center mb-2 font-bold">
-              <p className="text-lg">Итого</p>
-              <p className="text-lg">{priceFormatter2(basket.total)} sum</p>
-            </div>
-            <Button
-              className="w-full mt-2 bg-[#FF7020] text-white rounded-xl py-5"
-              type="text"
-              onClick={() => {
-                navigate("?" + queryString.stringify({ submit: true }));
-              }}
-            >
-              Оформить заказ
-            </Button>
-            <div className="flex gap-2 mt-2">
-              <img
-                src="https://cdn-icons-png.freepik.com/512/2362/2362252.png"
-                alt=""
-                style={{ width: "20px" }}
-              />
-              <Typography>Бесплатная доставка</Typography>
-            </div>
-          </div>
-        ) : (
-          <Title level={5}>Тут пока пусто :(</Title>
-        )}
+              ))}
+              <div className="flex justify-between items-center mb-2 font-bold">
+                <p className="text-lg">Итого</p>
+                <p className="text-lg">{priceFormatter2(totalPrice)} ₽</p>
+              </div>
+              <Button
+                className="w-full mt-2 bg-[#FF7020] text-white rounded-xl py-5"
+                type="text"
+                onClick={() =>
+                  navigate("?" + queryString.stringify({ submit: true }))
+                }
+              >
+                Оформить заказ
+              </Button>
+              <div className="flex gap-2 mt-2">
+                <img
+                  src="https://cdn-icons-png.freepik.com/512/2362/2362252.png"
+                  alt=""
+                  style={{ width: "20px" }}
+                />
+                <Typography>Бесплатная доставка</Typography>
+              </div>
+            </>
+          ) : (
+            <Title level={5}>Тут пока пусто :(</Title>
+          )}
+        </>
       </div>
     </Col>
   );

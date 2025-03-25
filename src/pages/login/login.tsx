@@ -9,45 +9,30 @@ import {
   Typography,
 } from "antd";
 import { useNavigate } from "react-router-dom";
-import { useLoginMutation } from "@src/store/auth";
-import { setCredentials } from "@src/store/authSlice";
-import { useDispatch } from "react-redux";
 import { css } from "@emotion/react";
+import axios from "axios";
 
 export const LoginPage = () => {
   const [form] = Form.useForm();
   const navigate = useNavigate();
-  const dispatch = useDispatch();
-
-  const [login] = useLoginMutation();
 
   const onFinish = async () => {
     try {
-      const data = form.getFieldsValue();
-      if (data.username && data.password) {
-        const res = await login(data);
-        console.log(data);
-
-        if (res?.error) {
-          message.error("User topilmadi. Iltimos, qayta urinib ko'ring!");
-        } else if (res?.data) {
-          localStorage.setItem("token", res.data.accessToken);
-          localStorage.setItem("userId", JSON.stringify(res.data.userId));
-          localStorage.setItem("username", data.username);
-          navigate("/home");
-          message.success("Hush kelibsiz !");
-          dispatch(
-            setCredentials({
-              userId: res.data.userId,
-              token: res.data.accessToken,
-              username: res.data.username,
-            })
-          );
-        }
-      }
+      const res = await axios.post("https://80a4e112872cbb1a.mokky.dev/auth", {
+        username: form.getFieldValue("username"),
+        password: form.getFieldValue("password"),
+      });
+      console.log(res);
+      localStorage.setItem("userId", res.data.data.id);
+      localStorage.setItem("token", res.data.token);
+      localStorage.setItem("username", res.data.data.username);
+      localStorage.setItem("phone", res.data.data.phone);
+      localStorage.setItem("fullname", res.data.data.fullname);
+      message.success("Xush kelibsiz!");
+      if (res.status === 201) navigate("/home");
     } catch (error) {
-      console.error("Login jarayonida xatolik:", error);
-      message.error("Xatolik yuz berdi. Iltimos, qayta urinib ko'ring.");
+      console.error(error);
+      message.error("Username yoki parol xato!");
     }
   };
 
@@ -85,7 +70,7 @@ export const LoginPage = () => {
                 <Col span={22} offset={1}>
                   <Form.Item
                     name="username"
-                    rules={[{ required: true, message: "UserName kiriting!" }]}
+                    rules={[{ required: true, message: "user name kiriting!" }]}
                     style={{ margin: 0 }}
                   >
                     <Input placeholder="Name" css={inputStyle} />
@@ -94,7 +79,7 @@ export const LoginPage = () => {
                 <Col span={22} offset={1}>
                   <Form.Item
                     name="password"
-                    rules={[{ required: true, message: "Parolni kiriting!" }]}
+                    rules={[{ required: true, message: "parolni kiriting!" }]}
                     style={{ margin: 0 }}
                   >
                     <Input.Password placeholder="Password" css={inputStyle} />

@@ -11,12 +11,15 @@ const Headers = () => {
     localStorage.removeItem("userId");
     localStorage.removeItem("token");
     localStorage.removeItem("username");
+    localStorage.removeItem("token");
+    localStorage.removeItem("phone");
+    localStorage.removeItem("fullname");
     navigate("/login");
   };
   const items = useMemo(
     () => [
       {
-        label: `${localStorage.getItem("username") || "Foydalanuvchi"}`,
+        label: `${localStorage.getItem("fullname") || "Foydalanuvchi"}`,
         key: "0",
       },
       {

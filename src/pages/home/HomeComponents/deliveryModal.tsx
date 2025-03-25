@@ -1,101 +1,27 @@
-import {
-  Button,
-  Form,
-  Input,
-  message,
-  Modal,
-  Radio,
-  type RadioChangeEvent,
-  Space,
-  Spin,
-} from "antd";
+import { Button, Form, Input, Modal, Radio, Space } from "antd";
 import Title from "antd/es/typography/Title";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import queryString from "query-string";
-import { useState, useEffect } from "react";
-import { useSelector } from "react-redux";
-import { RootState } from "@src/store";
-import { useGetUserByIdQuery } from "@src/store/user";
-import { useConfirmOrderMutation, useGetOrdersQuery } from "@src/store/orders";
+import { useState } from "react";
 import { css } from "@emotion/react";
 
 export const DeliveryModal = () => {
-  const location = useLocation();
   const navigate = useNavigate();
   const handleClose = () => {
     navigate("?" + queryString.stringify({}));
   };
 
-  const userId =
-    useSelector((state: RootState) => state.auth.userId) ||
-    (localStorage.getItem("userId")
-      ? JSON.parse(localStorage.getItem("userId") || "null")
-      : null) ||
-    null;
-
-  const { data: user, isLoading: userLoading } = useGetUserByIdQuery(userId);
-
-  const { data: basket, isLoading: basketLoading } = useGetOrdersQuery(
-    userId as string
-  );
-
-  const [confirmOrder] = useConfirmOrderMutation();
-
   const [form] = Form.useForm();
   const [dostavka, setDostavka] = useState<string>("DELIVERY");
-
-  useEffect(() => {
-    if (user) {
-      form.setFieldsValue({
-        type: "DELIVERY",
-        fullname: user.fullname,
-        phone: user.phone,
-      });
-    }
-  }, [form, user]);
-
-  const params = queryString.parse(location.search, {
-    parseNumbers: true,
-    parseBooleans: true,
-  });
-
-  const onRadioChange = (e: RadioChangeEvent) => {
-    form.setFieldsValue({
-      type: e.target.value,
-    });
-    setDostavka(e.target.value);
+  const onRadioChange = (e: any) => {
+    console.log("radio checked", e.target.value);
   };
-
-  const onFinish = () => {
-    const res = form.getFieldsValue();
-    const data = {
-      orderId: basket.id,
-      fullname: res.fullname,
-      phone: res.phone,
-      type: res.type,
-      address: {
-        street: res.street || " ",
-        apartmentNumber: res.apartmentNumber || " ",
-        buildingNumber: res.buildingNumber || " ",
-        intercom: res.intercom || " ",
-      },
-    };
-
-    try {
-      confirmOrder(data);
-      handleClose();
-      message.success("Order sent successfully");
-    } catch (error) {
-      console.error(error);
-      message.error("Error");
-    }
+  const onFinish = (values: any) => {
+    console.log("values", values);
   };
-
-  if (userLoading || basketLoading) return <Spin />;
-
   return (
     <Modal
-      open={Boolean(params.submit)}
+      open={false}
       footer={null}
       onCancel={handleClose}
       width={700}
