@@ -2,7 +2,7 @@ import Title from "antd/es/typography/Title";
 import { Button, Divider, Typography, Col } from "antd";
 import queryString from "query-string";
 import { useNavigate } from "react-router-dom";
-import { IProduct } from "@src/pages/interface";
+import { IBasket, IProduct } from "@src/pages/interface";
 import { BasketProduct } from "./korzinkaProduct";
 import { priceFormatter2 } from "../../Additions/PriceFormat";
 import { useEffect, useState } from "react";
@@ -63,19 +63,20 @@ export const Basket = () => {
     );
 
   const userId = Number(localStorage.getItem("userId")); // localStorage dan userId ni olish
-
-  const userBasket = basket.find((b) => b.userId === userId); // Faqat ushbu userId ga tegishli basketni olish
+  //@ts-ignore
+  const userBasket = basket.find((b: IBasket) => b.userId === userId); // Faqat ushbu userId ga tegishli basketni olish
 
   const basketItems =
     userBasket?.products
-      ?.map((item) => {
+      ?.map((item: IBasket) => {
         const product = products.find((p) => p.id === item.productId);
         return product ? { ...product, quantity: item.quantity } : null;
       })
       .filter(Boolean) || []; // Agar ma'lumot bo‘lmasa, bo‘sh massiv qaytarish
 
   const totalPrice = basketItems.reduce(
-    (sum, item) => sum + (item?.price || 0) * (item?.quantity || 0),
+    (sum: number, item: IBasket) =>
+      sum + (item?.price || 0) * (item?.quantity || 0),
     0
   );
 

@@ -19,6 +19,7 @@ export interface ICategory {
 export interface IBasket {
   productId: number | string;
   quantity: number;
+  price: number;
   userId: number | string;
   reason?: "APPEND" | "REMOVE";
 }
